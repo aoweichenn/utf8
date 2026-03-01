@@ -1,58 +1,141 @@
+太棒了！从你提供的头文件来看，这个库的设计非常现代且极具工业水准。你大量使用了 C++20 的 `std::span` 来实现零拷贝和内存安全，同时利用了
+`[[likely]]` / `[[unlikely]]` 进行分支预测优化。特别是 `decode_next_unsafe_padded` 这种要求 4 字节安全冗余边界的“契约式”接口，以及各类
+O(1) 的纯函数属性查询，都表明这是一个追求极致性能的底层基础库。
+
+基于这份头文件，我为你量身定制了全新的 `README.md`，精确反映了你实际的 API 设计和架构哲学。你可以直接复制并替换掉仓库里的旧版本：
+
+---
+
+```markdown
 # UTF-8 编解码工具库
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Language](https://img.shields.io/badge/language-C++-brightgreen.svg)](https://en.wikipedia.org/wiki/C++)
+[![Language](https://img.shields.io/badge/language-C++20-brightgreen.svg)](https://en.wikipedia.org/wiki/C%2B%2B20)
 
-## 仓库简介
+## 📖 仓库简介
 
-本仓库实现了 UTF-8 编码/解码的核心逻辑，聚焦**轻量、可复用、易理解**的设计目标，既适用于开发者学习 UTF-8
-底层编码原理，也可直接集成到嵌入式、轻量服务等场景中，解决 UTF-8 字符处理、合法性校验等核心问题。
+本仓库实现了一套高性能、内存安全的 C++20 UTF-8 处理基础库。聚焦于**极致性能、零内存分配、现代 C++ 契约式设计**。不仅适用于学习
+UTF-8 底层编码原理，更能直接集成到对性能要求严苛的工业级场景中（如编译器前端、高性能文本渲染、网络协议解析等）。
 
-相较于编程语言内置的 UTF-8 工具，本仓库的核心优势：
+相较于传统的 UTF-8 工具库，本仓库的核心优势：
 
-- 无第三方依赖，代码体积小，可直接嵌入项目；
-- 完整的非法字节序列校验与容错处理，避免编解码异常；
-- 代码注释详尽，清晰还原 UTF-8 编码规则的底层逻辑；
-- 提供简洁的 API 接口，降低业务集成成本。
+* **现代 C++20 设计**：全面采用 `std::span` 替代裸指针，保证内存安全与零拷贝处理；
+* **极致的性能优化**：
+    * 内置针对 ASCII 的 Fast-Path，并配合 `[[likely]]` / `[[unlikely]]` 优化分支预测；
+    * 提供带有 Padding Sentinel（安全冗余边界）的 Unsafe 接口，极限压榨解码性能；
+    * 字符属性查询（如标识符判断、宽度计算等）全部实现为 **O(1) 纯函数**；
+* **高安全性与容错**：不依赖异常机制 (No Exceptions)，不阻断程序，完全通过状态码返回完整的局部诊断信息；
+* **无第三方依赖**：纯头文件与极简源码，极易嵌入任何 C++ 工程。
 
-## 核心功能
+## ✨ 核心功能
 
-| 功能项        | 描述                                         |
-|------------|--------------------------------------------|
-| UTF-8 编码   | 将 Unicode 码点（UCS-4/UCS-2）转换为 UTF-8 字节序列    |
-| UTF-8 解码   | 将 UTF-8 字节序列还原为 Unicode 码点，支持多字节字符（1-4 字节） |
-| 合法性校验      | 校验 UTF-8 字节序列是否符合标准（如续字节格式、码点范围、超长编码等）     |
-| 字节长度计算     | 根据 Unicode 码点快速计算对应的 UTF-8 编码字节长度          |
-| 非法序列容错（可选） | 对非法 UTF-8 字节序列进行替换/跳过处理，避免解码中断             |
+| 功能模块 | API 概览 | 描述 |
+| --- | --- | --- |
+| **高性能解码** | `decode_next` / `decode_prev` | 基于 `std::span` 的双向解码，安全且支持完整状态诊断。 |
+| **极速解码(Unsafe)** | `decode_next_unsafe_padded` | **高性能模式**：调用方保证 4 字节安全边界，跳过边界检查直接解码。 |
+| **编码与转换** | `encode` / `utf8_to_utf16` | 高效的 UTF-8 编码以及与 UTF-16 格式的互转，支持保留已写入长度。 |
+| **Unicode 属性查询**| `is_identifier_start` 等 | O(1) 判断标识符、运算符候选、大小写折叠 (`fold_case_simple`) 及显示宽度。 |
+| **实用工具** | `strip_bom` / `to_escaped_ascii` | 快速剥离 UTF-8 BOM 头，或将非 ASCII 字符安全转义。 |
 
-## 快速开始
+## 🚀 快速开始
 
-## 编码规范
+### 1. 编译与集成
 
-- 代码遵循 UTF-8 标准（RFC 3629），兼容 Unicode 15.0 及以上版本；
-- 所有接口均做参数合法性校验，避免空指针、缓冲区越界等问题；
-- 错误处理：通过返回值明确标识异常，不依赖全局变量/断言。
+本项目推荐使用 CMake 进行集成。你可以直接将源码目录添加到你的项目中：
 
-## 许可证
+```cmake
+# 在你的 CMakeLists.txt 中添加
+add_subdirectory(path/to/utf8)
+target_link_libraries(your_target_name PRIVATE utf8)
 
-本项目基于 MIT 许可证开源，详见 [LICENSE](LICENSE) 文件。
+```
 
-## 贡献指南
+*注：本项目依赖 C++20 标准（如 `std::span`），请确保你的编译器支持并已开启 `-std=c++20`。*
 
-1. Fork 本仓库；
-2. 创建特性分支（`git checkout -b feature/xxx`）；
-3. 提交代码（`git commit -m 'feat: 新增 xxx 功能'`）；
-4. 推送分支（`git push origin feature/xxx`）；
-5. 提交 Pull Request。
+### 2. 代码示例
 
-贡献需遵循以下规范：
+#### 示例 A：安全的单步解码 (Safe Decoding)
 
-- 新增功能需补充对应的单元测试；
-- 代码注释需清晰描述逻辑，关键函数需包含文档注释；
-- 保持代码风格与现有代码一致（如缩进、命名规范）。
+使用 `std::span` 进行安全的越界检查和解码：
 
-## 参考资料
+```cpp
+#include <vector>
+#include <iostream>
+#include "utf8/utf8.hpp" // 替换为实际头文件路径
 
-- [RFC 3629 - UTF-8, a transformation format of ISO 10646](https://datatracker.ietf.org/doc/html/rfc3629)
-- [Unicode Standard 15.0](https://www.unicode.org/versions/Unicode15.0.0/)
-- [UTF-8 编码规则详解](https://en.wikipedia.org/wiki/UTF-8)
+int main() {
+    std::vector<uint8_t> text = {0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD}; // "你好"
+    std::span<const uint8_t> view(text);
+
+    while (!view.empty()) {
+        auto result = utf8::decode_next(view);
+        
+        if (result.status == utf8::base::DecodeStatus::Success) {
+            std::cout << "Codepoint: U+" << std::hex << result.codepoint << std::endl;
+        } else {
+            std::cerr << "Decode error!" << std::endl;
+        }
+        
+        // 推进视图窗口
+        view = view.subspan(result.bytes_consumed);
+    }
+    return 0;
+}
+
+```
+
+#### 示例 B：极限性能解码 (Unsafe Padded Decoding)
+
+在编译器词法分析等高性能场景，你可以通过在缓冲区末尾填充 4 字节的 Padding 来免除边界检查：
+
+```cpp
+// 注意：契约要求 buffer 末尾必须包含至少 4 字节的安全冗余边界！
+std::vector<uint8_t> padded_buffer = {0x41, 0x42, 0x43, 0x00, 0x00, 0x00, 0x00};
+const uint8_t* ptr = padded_buffer.data();
+
+// 极速解析，无视边界检查
+auto result = utf8::decode_next_unsafe_padded(ptr);
+std::cout << "Codepoint: " << result.codepoint << std::endl; 
+
+```
+
+#### 示例 C：属性查询与实用工具
+
+库内置了 O(1) 的丰富属性查询，非常适合用于文本编辑器或词法分析器开发：
+
+```cpp
+uint32_t cp = 0x53D8; // '变'
+
+// 判断是否可以作为标识符的开头
+if (utf8::is_identifier_start(cp)) {
+    // ...
+}
+
+// 估算字符的终端显示宽度
+uint8_t width = utf8::display_width_approx(cp);
+
+// 移除 BOM 头
+std::span<const uint8_t> file_data = /* ... */;
+auto data_without_bom = utf8::utils::strip_bom(file_data);
+
+```
+
+## 📜 编码规范与契约
+
+* **异常安全**：全库使用 `noexcept`，不抛出任何异常。
+* **内存安全**：常规接口强制使用 `std::span` 防御越界；`_unsafe` 接口采用严格的调用方契约（Caller Contract）。
+* **兼容性**：行为符合 RFC 3629 标准。
+
+## 📄 许可证
+
+本项目基于 MIT 许可证开源，详见 [LICENSE](https://www.google.com/search?q=LICENSE) 文件。
+
+```
+
+***
+
+这份 README 更加突出了你头文件里体现的现代 C++ 特性（如 C++20, `std::span`, noexcept, O(1) 纯函数等），能够让同行一眼看出这个库的专业度。
+
+接下来，需要我为你编写这个头文件配套的 **C++20 单元测试样例（例如基于 GoogleTest）**，或者是提供一段 **Benchmark 性能测试代码**来验证 `decode_next_unsafe_padded` 和常规解码的性能差异吗？
+
+```
