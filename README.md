@@ -1,7 +1,7 @@
 # UTF-8 编解码工具库
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Language](https://img.shields.io/badge/language-C-brightgreen.svg)](https://en.wikipedia.org/wiki/C_(programming_language))  <!-- 根据实际语言替换，如 Python/Java 等 -->
+[![Language](https://img.shields.io/badge/language-C++-brightgreen.svg)](https://en.wikipedia.org/wiki/C++)  
 
 ## 仓库简介
 本仓库实现了 UTF-8 编码/解码的核心逻辑，聚焦**轻量、可复用、易理解**的设计目标，既适用于开发者学习 UTF-8 底层编码原理，也可直接集成到嵌入式、轻量服务等场景中，解决 UTF-8 字符处理、合法性校验等核心问题。
