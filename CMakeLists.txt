@@ -6,7 +6,28 @@ option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so/.dylib)" OFF)
 option(UTF8_BUILD_TESTS "Build unit tests" ON)
 option(UTF8_OFFLINE_BUILD "Fail if unicode cache is missing (Air-gapped mode)" OFF)
 option(UTF8_BUILD_BENCHMARKS "Build microbenchmarks" OFF)
-option(UTF8_BUILD_COVERAGE "Build with code coverage tracking (lcov)" OFF) # 🌟 新增覆盖率开关
+option(UTF8_BUILD_COVERAGE "Build with code coverage tracking (lcov)" OFF)
+
+# ==============================================================================
+# 🍎 macOS 专属适配：自动处理 libc++ 标准库链接
+# ==============================================================================
+option(UTF8_FORCE_LIBCXX_ON_MACOS "Force using libc++ on macOS (recommended)" ON)
+
+if (APPLE AND UTF8_FORCE_LIBCXX_ON_MACOS)
+    # 1. 编译阶段强制使用 libc++
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+
+    # 2. 链接阶段显式链接 libc++
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -lc++")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -stdlib=libc++ -lc++")
+
+    # 3. 关键：确保 FetchContent 拉取的依赖（gtest/benchmark）也继承此配置
+    set(CMAKE_CXX_FLAGS_INIT "-stdlib=libc++" CACHE STRING "" FORCE)
+    set(CMAKE_EXE_LINKER_FLAGS_INIT "-stdlib=libc++ -lc++" CACHE STRING "" FORCE)
+
+    message(STATUS "🍎 [UTF8] macOS detected: Forcing libc++ standard library (set UTF8_FORCE_LIBCXX_ON_MACOS=OFF to disable)")
+endif ()
 
 # ==============================================================================
 # 🌟 目录规划一：编译产物隔离 (按 Debug/Release 区分输出目录)
