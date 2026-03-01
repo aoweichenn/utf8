@@ -119,4 +119,4 @@ auto data_without_bom = utf8::utils::strip_bom(file_data);
 
 ## 📄 许可证
 
-本项目基于 MIT 许可证开源，详见 [LICENSE](https://www.google.com/search?q=LICENSE) 文件。
+本项目基于 MIT 许可证开源，详见 [LICENSE](LICENSE) 文件。
